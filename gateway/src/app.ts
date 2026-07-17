@@ -8,8 +8,8 @@ const apiProxy = httpProxy.createProxyServer();
 
 app.use(cors());
 
-app.all("/*splat", (req: Request, res: Response, next: NextFunction) => {
-    apiProxy.web(req, res, { target: 'http://localhost:3000' }, function (e) {
+app.all(/(.*)/, (req: Request, res: Response, next: NextFunction) => {
+    apiProxy.web(req, res, { target: 'http://localhost:8000' }, function (e) {
         if (e) {
             console.error(e);
             next(e);
