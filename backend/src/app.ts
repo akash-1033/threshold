@@ -12,8 +12,8 @@ app.get("/users", (req: Request, res: Response) => {
         "users": [
             {
                 "id": 1,
-                "name": "Alice",
-                "email": "alice@example.com"
+                "name": "Akash Jha",
+                "email": "akash@example.com"
             },
             {
                 "id": 2,
