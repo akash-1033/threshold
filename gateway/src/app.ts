@@ -6,6 +6,7 @@ import cors from "cors";
 import { rateLimiter, type RateLimiterRule } from "./middleware/rateLimiter.js";
 
 const app: Express = express();
+app.set("trust proxy", true);
 const apiProxy = httpProxy.createProxyServer();
 
 app.use(cors());
@@ -17,8 +18,14 @@ const RATE_LIMIT_RULE: RateLimiterRule = {
     },
 };
 
+app.get("/instance", (req: Request, res: Response) => {
+    res.status(200).json({
+        instance: process.env.INSTANCE_NAME || "unknown"
+    });
+});
+
 app.all(/(.*)/, rateLimiter(RATE_LIMIT_RULE), (req: Request, res: Response, next: NextFunction) => {
-    apiProxy.web(req, res, { target: 'http://localhost:8000' }, function (e) {
+    apiProxy.web(req, res, { target: process.env.BACKEND_URL || 'http://localhost:8000' }, function (e) {
         if (e) {
             console.error(e);
             next(e);

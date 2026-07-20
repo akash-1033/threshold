@@ -2,8 +2,8 @@ import { createClient } from "redis";
 import type { RedisClientType } from "redis";
 
 const REDIS_CONFIG = {
-    HOST: 'localhost',
-    PORT: 6379,
+    HOST: process.env.REDIS_HOST || 'localhost',
+    PORT: parseInt(process.env.REDIS_PORT || '6379', 10),
 };
 
 export const redisClient: RedisClientType = createClient({

@@ -1,0 +1,72 @@
+services:
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "${PUBLIC_PORT}:80"
+    volumes:
+      - ./nginx/default.conf.template:/etc/nginx/templates/default.conf.template:ro
+    environment:
+      - GATEWAY_PORT=${GATEWAY_PORT}
+    depends_on:
+      - gateway1
+      - gateway2
+      - gateway3
+
+  redis:
+    image: redis:alpine
+    ports:
+      - "${REDIS_PORT}:6379"
+
+  backend:
+    build: ./backend
+    environment:
+      - PORT=${BACKEND_PORT}
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    command: npm run dev
+
+  gateway1:
+    build: ./gateway
+    environment:
+      - REDIS_HOST=redis
+      - PORT=${GATEWAY_PORT}
+      - BACKEND_URL=http://backend:${BACKEND_PORT}
+      - INSTANCE_NAME=gateway-1
+    depends_on:
+      - redis
+      - backend
+    volumes:
+      - ./gateway:/app
+      - /app/node_modules
+    command: npm run dev
+
+  gateway2:
+    build: ./gateway
+    environment:
+      - REDIS_HOST=redis
+      - PORT=${GATEWAY_PORT}
+      - BACKEND_URL=http://backend:${BACKEND_PORT}
+      - INSTANCE_NAME=gateway-2
+    depends_on:
+      - redis
+      - backend
+    volumes:
+      - ./gateway:/app
+      - /app/node_modules
+    command: npm run dev
+
+  gateway3:
+    build: ./gateway
+    environment:
+      - REDIS_HOST=redis
+      - PORT=${GATEWAY_PORT}
+      - BACKEND_URL=http://backend:${BACKEND_PORT}
+      - INSTANCE_NAME=gateway-3
+    depends_on:
+      - redis
+      - backend
+    volumes:
+      - ./gateway:/app
+      - /app/node_modules
+    command: npm run dev
