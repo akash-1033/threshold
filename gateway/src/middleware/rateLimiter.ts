@@ -1,5 +1,10 @@
 import type { Request, Response, NextFunction } from 'express';
 import redisClient from "../redis.js";
+import fs from "node:fs";
+import path from "node:path";
+
+const luaScriptPath = path.resolve(process.cwd(), "src/lua/fixWindow.lua");
+const luaScript = fs.readFileSync(luaScriptPath, "utf8");
 
 export interface RateLimiterRule {
     rate_limit: {
@@ -15,13 +20,14 @@ export const rateLimiter = (rule: RateLimiterRule) => {
         const currentEndpoint = request.path;
         const redisId = `${currentEndpoint}/${ipAddress}`;
 
-        const requests = await redisClient.incr(redisId);
-        if (requests === 1) {
-            await redisClient.expire(redisId, rate_limit.time);
-        }
+        const result = await redisClient.eval(luaScript, {
+            keys: [redisId],
+            arguments: [rate_limit.limit.toString(), rate_limit.time.toString()]
+        }) as [number, number];
+
+        const [requests, ttlLeft] = result;
 
         if (requests > rate_limit.limit) {
-            const ttlLeft = await redisClient.ttl(redisId);
             response.setHeader("Retry-After", ttlLeft);
             return response.status(429).json({
                 message: `too many requests!! retry after ${ttlLeft} seconds`,
