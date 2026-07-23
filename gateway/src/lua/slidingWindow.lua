@@ -11,12 +11,13 @@ if currentCount >= limit then
     local oldest = redis.call('zrange', key, 0, 0, 'withscores')
     local oldest_time = tonumber(oldest[2])
     
-    local ttlLeft = math.max(0, math.ceil((oldest_time + (window * 1000) - now) / 1000))
+    local retryAfter = math.max(0, math.ceil((oldest_time + (window * 1000) - now) / 1000))
     
-    return {false, currentCount, ttlLeft}
+    return {false, retryAfter}
 else
-    redis.call('zadd', key, now, now)
+    local reqId = redis.call('incr', 'global:request:id')
+    redis.call('zadd', key, now, now .. ":" .. reqId)
     redis.call('expire', key, window)
     
-    return {true, currentCount + 1, window}
+    return {true, window}
 end

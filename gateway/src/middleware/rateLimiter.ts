@@ -27,14 +27,14 @@ export const rateLimiter = (rule: RateLimiterRule) => {
                 rate_limit.time.toString(),
                 Date.now().toString()
             ]
-        }) as [boolean, number, number];
+        }) as [boolean, number];
 
-        const [success, requests, ttlLeft] = result;
+        const [success, retryAfter] = result;
 
         if (!success) {
-            response.setHeader("Retry-After", ttlLeft);
+            response.setHeader("Retry-After", retryAfter);
             return response.status(429).json({
-                message: `too many requests!! retry after ${ttlLeft} seconds`,
+                message: `too many requests!! retry after ${retryAfter} seconds`,
             });
         }
         next();
