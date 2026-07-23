@@ -3,7 +3,7 @@ import redisClient from "../redis.js";
 import fs from "node:fs";
 import path from "node:path";
 
-const luaScriptPath = path.resolve(process.cwd(), "src/lua/fixWindow.lua");
+const luaScriptPath = path.resolve(process.cwd(), "src/lua/slidingWindow.lua");
 const luaScript = fs.readFileSync(luaScriptPath, "utf8");
 
 export interface RateLimiterRule {
@@ -22,12 +22,16 @@ export const rateLimiter = (rule: RateLimiterRule) => {
 
         const result = await redisClient.eval(luaScript, {
             keys: [redisId],
-            arguments: [rate_limit.limit.toString(), rate_limit.time.toString()]
-        }) as [number, number];
+            arguments: [
+                rate_limit.limit.toString(),
+                rate_limit.time.toString(),
+                Date.now().toString()
+            ]
+        }) as [boolean, number, number];
 
-        const [requests, ttlLeft] = result;
+        const [success, requests, ttlLeft] = result;
 
-        if (requests > rate_limit.limit) {
+        if (!success) {
             response.setHeader("Retry-After", ttlLeft);
             return response.status(429).json({
                 message: `too many requests!! retry after ${ttlLeft} seconds`,
